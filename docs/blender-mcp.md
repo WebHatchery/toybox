@@ -48,3 +48,24 @@ bpy.ops.render.render(write_still=True)
 
 Setup references: [Blender MCP](https://github.com/ahujasid/blender-mcp) and
 [Codex MCP configuration](https://developers.openai.com/codex/mcp).
+
+## Reference-inspired plush variant
+
+`assets/models/toybox_plush_bear.blend` contains the second bear in the
+**Honey Bear - reference study** scene. Its recreation script is
+`scripts/blender_plush_bear.py`, and its inspected render is
+`docs/verification/blender_plush_bear.png`.
+
+This variant follows the supplied teddy photograph's rounded proportions,
+honey brown fur, biscuit muzzle and soles, chocolate paw embroidery, glass
+eyes, curved smile, and burgundy/ivory gingham bow. It uses 58 editable toy
+objects, including deterministic fiber curves and folded ribbon meshes.
+Materials are procedural and require no external textures. The simple warm
+studio background does not reproduce the photograph's shop or signage.
+
+This is a detailed Blender authoring/render asset, not a runtime-ready GLB:
+the fur and procedural fabric would need simplification and texture baking
+for a browser game. The original low-poly bear is retained separately.
+Verified creation through MCP, successful background rendering, and visual
+inspection. Default `publish.ps1` passed Windows/WebGL builds and Preview
+deployment; local Project Roost tracking was unavailable at port 80.
