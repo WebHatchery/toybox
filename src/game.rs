@@ -208,7 +208,7 @@ impl Game {
         match scene {
             scene if scene.starts_with("toy_gallery:") => {
                 let slug = scene.strip_prefix("toy_gallery:").unwrap_or("bear");
-                self.gallery = Some(GalleryScene::new(&slug));
+                self.gallery = Some(GalleryScene::new(slug));
             }
             "gameplay" => {
                 self.session = GameSession::new_with_seed(&self.data, CLOSING_SHIFT_SEED);

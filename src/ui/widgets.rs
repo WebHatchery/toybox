@@ -49,35 +49,10 @@ pub(super) fn draw_wrapped_text(
         max_lines,
         color,
     } = style;
-    let mut line = String::new();
-    let mut lines: Vec<String> = Vec::new();
-
-    for word in text.split_whitespace() {
-        let candidate = if line.is_empty() {
-            word.to_owned()
-        } else {
-            format!("{line} {word}")
-        };
-        // The toolkit shortens anything too wide, so an unchanged string is the
-        // signal that it fits — no separate measuring path to keep in step.
-        if truncate_text_to_width(&candidate, max_width, size) == candidate {
-            line = candidate;
-            continue;
-        }
-        if !line.is_empty() {
-            lines.push(std::mem::take(&mut line));
-            if lines.len() == max_lines {
-                break;
-            }
-        }
-        line = word.to_owned();
-    }
-    if !line.is_empty() && lines.len() < max_lines {
-        lines.push(line);
-    }
+    let lines = macroquad_toolkit::ui::wrap_text(text, max_width, size);
 
     let mut last_baseline = baseline_y;
-    for (index, line) in lines.iter().enumerate() {
+    for (index, line) in lines.iter().take(max_lines).enumerate() {
         last_baseline = baseline_y + index as f32 * line_height;
         draw_fitted_text(line, x, last_baseline, max_width, size, color);
     }

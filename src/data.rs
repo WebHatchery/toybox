@@ -1,7 +1,7 @@
 //! Embedded game data and asset manifests for Toybox After Hours.
 
 use macroquad_toolkit::assets::TextureConfig;
-use macroquad_toolkit::data_loader::{load_embedded_json, load_embedded_json_labeled};
+use macroquad_toolkit::data_loader::load_embedded_json_labeled;
 use serde::{Deserialize, Serialize};
 
 const GAME_CONFIG_JSON: &str =
@@ -192,7 +192,8 @@ impl GameData {
         let config = load_embedded_json_labeled("game_config", GAME_CONFIG_JSON)?;
         let displays = load_embedded_json_labeled("displays", DISPLAYS_JSON)?;
         let upgrades = load_embedded_json_labeled("upgrades", UPGRADES_JSON)?;
-        let texture_manifest = load_embedded_json(TEXTURE_MANIFEST_JSON)?;
+        let texture_manifest =
+            load_embedded_json_labeled("texture_manifest", TEXTURE_MANIFEST_JSON)?;
         let layout: LayoutData = load_embedded_json_labeled("layout", LAYOUT_JSON)?;
 
         if layout.benches.is_empty() {

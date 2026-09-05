@@ -2,9 +2,8 @@
 //! its sound follows the same rule and renders a small deterministic cue set at
 //! startup rather than shipping sampled files.
 
-use macroquad::audio::{
-    load_sound_from_bytes, play_sound, set_sound_volume, stop_sound, PlaySoundParams, Sound,
-};
+use macroquad::audio::PlaySoundParams;
+use macroquad_toolkit::audio::SoundManager;
 use macroquad_toolkit::synth::{render_wav, SynthConfig, Voice, Wave};
 use std::collections::HashMap;
 
@@ -131,10 +130,16 @@ fn ambience_voices() -> Vec<Voice> {
     voices
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+enum SoundKey {
+    Cue(Cue),
+    Ambience,
+}
+
 pub struct AudioDirector {
-    cues: HashMap<Cue, Sound>,
+    cues: SoundManager<SoundKey>,
     cooldowns: HashMap<Cue, f32>,
-    ambience: Option<Sound>,
+    ambience: bool,
     effects_volume: f32,
     ambience_volume: f32,
     ambience_started: bool,
@@ -144,9 +149,9 @@ pub struct AudioDirector {
 impl AudioDirector {
     pub fn silent() -> Self {
         Self {
-            cues: HashMap::new(),
+            cues: SoundManager::new(),
             cooldowns: HashMap::new(),
-            ambience: None,
+            ambience: false,
             effects_volume: 0.0,
             ambience_volume: 0.0,
             ambience_started: false,
@@ -155,15 +160,16 @@ impl AudioDirector {
     }
 
     pub async fn load(effects_volume: f32, ambience_volume: f32) -> Self {
-        let mut cues = HashMap::new();
+        let mut cues = SoundManager::new();
         for (index, cue) in Cue::ALL.into_iter().enumerate() {
             let bytes = render_wav(&voices_for(cue), &config(), 0x70B0_0000 + index as u64);
-            if let Ok(sound) = load_sound_from_bytes(&bytes).await {
-                cues.insert(cue, sound);
-            }
+            let _ = cues.load_sound_bytes(SoundKey::Cue(cue), &bytes).await;
         }
         let ambience_bytes = render_wav(&ambience_voices(), &config(), 0x70B0_A11C);
-        let ambience = load_sound_from_bytes(&ambience_bytes).await.ok();
+        let ambience = cues
+            .load_sound_bytes(SoundKey::Ambience, &ambience_bytes)
+            .await
+            .is_ok();
         Self {
             cues,
             cooldowns: HashMap::new(),
@@ -184,8 +190,9 @@ impl AudioDirector {
     pub fn set_volumes(&mut self, effects: f32, ambience: f32) {
         self.effects_volume = effects.clamp(0.0, 1.0);
         self.ambience_volume = ambience.clamp(0.0, 1.0);
-        if let Some(sound) = &self.ambience {
-            set_sound_volume(sound, self.ambience_volume);
+        if self.ambience {
+            self.cues
+                .set_raw_volume(SoundKey::Ambience, self.ambience_volume);
         }
     }
 
@@ -193,11 +200,11 @@ impl AudioDirector {
         if !self.enabled || self.ambience_started {
             return;
         }
-        let Some(sound) = &self.ambience else {
+        if !self.ambience {
             return;
-        };
-        play_sound(
-            sound,
+        }
+        self.cues.play_raw(
+            SoundKey::Ambience,
             PlaySoundParams {
                 looped: true,
                 volume: self.ambience_volume,
@@ -207,8 +214,8 @@ impl AudioDirector {
     }
 
     pub fn stop_ambience(&mut self) {
-        if let Some(sound) = &self.ambience {
-            stop_sound(sound);
+        if self.ambience {
+            self.cues.stop_raw(SoundKey::Ambience);
         }
         self.ambience_started = false;
     }
@@ -221,11 +228,11 @@ impl AudioDirector {
         if !self.channel_allows(cue) {
             return;
         }
-        let Some(sound) = self.cues.get(&cue) else {
+        if !self.cues.has_sound(SoundKey::Cue(cue)) {
             return;
-        };
-        play_sound(
-            sound,
+        }
+        self.cues.play_raw(
+            SoundKey::Cue(cue),
             PlaySoundParams {
                 looped: false,
                 volume: (self.effects_volume * gain).clamp(0.0, 1.0),
