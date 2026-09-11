@@ -1,7 +1,6 @@
 {
   "title": "Toybox After Hours: Closing Shift",
   "wasm": "toybox_after_hours",
-  "roost_slug": "rust_toybox",
   "status": {
     "text": "Playable",
     "class": "playable"
