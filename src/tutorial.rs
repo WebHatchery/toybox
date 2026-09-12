@@ -1,7 +1,7 @@
 //! Contextual first-shift guidance. It teaches one action at a time and waits
 //! for repair and trolley advice until those mechanics are actually relevant.
 
-use crate::data::GameData;
+use crate::data::{GameData, TutorialStepCopy};
 use crate::state::{GameSession, InteractionResult};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,10 +17,22 @@ pub enum TutorialStep {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TutorialHint {
     pub step: TutorialStep,
-    pub eyebrow: &'static str,
-    pub title: &'static str,
-    pub body: &'static str,
-    pub keys: &'static [&'static str],
+    pub eyebrow: String,
+    pub title: String,
+    pub body: String,
+    pub keys: Vec<String>,
+}
+
+impl TutorialHint {
+    fn from_copy(step: TutorialStep, copy: &TutorialStepCopy) -> Self {
+        Self {
+            step,
+            eyebrow: copy.eyebrow.clone(),
+            title: copy.title.clone(),
+            body: copy.body.clone(),
+            keys: copy.keys.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -81,6 +93,15 @@ impl TutorialProgress {
         }
     }
 
+    /// Mark the basic sorting loop as demonstrated by a scripted guide or a
+    /// tutorial preview without pretending that a live interaction happened.
+    pub fn mark_sorting_loop_ready(&mut self) {
+        self.moved = true;
+        self.looked = true;
+        self.picked_up = true;
+        self.shelved_correctly = true;
+    }
+
     pub fn skip(&mut self) {
         self.active = false;
     }
@@ -100,67 +121,46 @@ impl TutorialProgress {
             return None;
         }
         if !self.moved || !self.looked {
-            return Some(TutorialHint {
-                step: TutorialStep::Navigate,
-                eyebrow: "FIRST SHIFT · 1/6",
-                title: "LOOK AROUND THE SHOP",
-                body: "Use the mouse to look and WASD to walk. Click the shop to lock mouse look.",
-                keys: &["WASD", "MOUSE"],
-            });
+            return Some(TutorialHint::from_copy(
+                TutorialStep::Navigate,
+                &data.ui_copy.tutorial[0],
+            ));
         }
         if !self.picked_up {
-            return Some(TutorialHint {
-                step: TutorialStep::PickUp,
-                eyebrow: "FIRST SHIFT · 2/6",
-                title: "PICK UP A TOY",
-                body: "Aim at a loose toy. The prompt below always shows what your next action will do.",
-                keys: &["E"],
-            });
+            return Some(TutorialHint::from_copy(
+                TutorialStep::PickUp,
+                &data.ui_copy.tutorial[1],
+            ));
         }
         if !self.shelved_correctly {
-            return Some(TutorialHint {
-                step: TutorialStep::Shelve,
-                eyebrow: "FIRST SHIFT · 3/6",
-                title: "MATCH THE CATEGORY",
-                body: "Carry the toy to a display with the same category, then aim at an empty shelf spot.",
-                keys: &["E"],
-            });
+            return Some(TutorialHint::from_copy(
+                TutorialStep::Shelve,
+                &data.ui_copy.tutorial[2],
+            ));
         }
 
         let carrying_part = session.active_toy().is_some_and(|toy| toy.is_repair_part());
         if !self.repaired && carrying_part {
-            return Some(TutorialHint {
-                step: TutorialStep::Repair,
-                eyebrow: "FIRST SHIFT · 4/6",
-                title: "MEND A MATCHED PAIR",
-                body: "Find this toy's other half, place both on one repair bench, then repair it.",
-                keys: &["E"],
-            });
+            return Some(TutorialHint::from_copy(
+                TutorialStep::Repair,
+                &data.ui_copy.tutorial[3],
+            ));
         }
         if !self.opened_tools && session.next_available_upgrade(data).is_some() {
-            return Some(TutorialHint {
-                step: TutorialStep::Tools,
-                eyebrow: "FIRST SHIFT · 5/6",
-                title: "SPEND A DISPLAY CREDIT",
-                body: "Each restored display earns one credit. Open the tool rack to improve this shift.",
-                keys: &["T"],
-            });
+            return Some(TutorialHint::from_copy(
+                TutorialStep::Tools,
+                &data.ui_copy.tutorial[4],
+            ));
         }
         if !self.cycled_trolley
             && session.has_upgrade("sorting_trolley")
             && session.player.carried_toy_ids.len() > 1
         {
-            return Some(TutorialHint {
-                step: TutorialStep::Trolley,
-                eyebrow: "FIRST SHIFT · 6/6",
-                title: "CHOOSE THE ACTIVE TOY",
-                body: "The bright trolley token is in your hands. Cycle it before shelving or dropping.",
-                keys: &["Q"],
-            });
+            return Some(TutorialHint::from_copy(
+                TutorialStep::Trolley,
+                &data.ui_copy.tutorial[5],
+            ));
         }
         None
     }
 }
-
-#[cfg(test)]
-mod tests;

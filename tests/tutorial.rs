@@ -1,4 +1,6 @@
-use super::*;
+use toybox_after_hours::data::GameData;
+use toybox_after_hours::state::{GameSession, InteractionResult};
+use toybox_after_hours::tutorial::{TutorialProgress, TutorialStep};
 
 #[test]
 fn guidance_advances_from_navigation_to_the_sorting_loop() {
@@ -29,10 +31,7 @@ fn contextual_lessons_wait_until_their_mechanic_is_relevant() {
     let data = GameData::load().unwrap();
     let session = GameSession::new(&data);
     let mut tutorial = TutorialProgress::new(true);
-    tutorial.moved = true;
-    tutorial.looked = true;
-    tutorial.picked_up = true;
-    tutorial.shelved_correctly = true;
+    tutorial.mark_sorting_loop_ready();
 
     assert!(tutorial.hint(&session, &data).is_none());
 }

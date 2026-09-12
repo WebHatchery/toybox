@@ -1,7 +1,10 @@
-use super::{logical_mouse_position, shift_seed_code, UiAction, LOGICAL_HEIGHT, LOGICAL_WIDTH};
+use super::{shift_seed_code, UiAction, LOGICAL_HEIGHT, LOGICAL_WIDTH};
 use crate::state::{BestRuns, ShiftMode};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
+
+mod help;
+pub(crate) use help::draw_help_screen;
 
 pub(crate) fn draw_title_screen(
     title_texture: Option<&Texture2D>,
@@ -12,7 +15,7 @@ pub(crate) fn draw_title_screen(
     draw_title_scrim();
 
     let mut actions = Vec::new();
-    let mouse = logical_mouse_position();
+    let pointer = super::logical_pointer();
     let button_w = 148.0;
     let button_h = 38.0;
     let button_gap = 14.0;
@@ -50,7 +53,7 @@ pub(crate) fn draw_title_screen(
             label,
             enabled,
             tone,
-            mouse,
+            pointer,
         ) {
             actions.push(action);
         }
@@ -119,7 +122,7 @@ pub(crate) fn draw_settings_screen(
     draw_title_scrim();
 
     let mut actions = Vec::new();
-    let mouse = logical_mouse_position();
+    let pointer = super::logical_pointer();
     let button_w = 224.0;
     let button_h = 38.0;
     let settings_panel = Rect::new(322.0, 188.0, 636.0, 500.0);
@@ -191,7 +194,7 @@ pub(crate) fn draw_settings_screen(
         fullscreen_label,
         true,
         ButtonTone::Primary,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::ToggleFullscreen);
     }
@@ -202,7 +205,7 @@ pub(crate) fn draw_settings_screen(
         vec2(right, row1_y),
         UiAction::FovDecrease,
         UiAction::FovIncrease,
-        mouse,
+        pointer,
         &mut actions,
     );
 
@@ -213,7 +216,7 @@ pub(crate) fn draw_settings_screen(
         vec2(left, row2_y),
         UiAction::SensitivityDecrease,
         UiAction::SensitivityIncrease,
-        mouse,
+        pointer,
         &mut actions,
     );
     draw_settings_stepper(
@@ -222,7 +225,7 @@ pub(crate) fn draw_settings_screen(
         vec2(right, row2_y),
         UiAction::UiScaleDecrease,
         UiAction::UiScaleIncrease,
-        mouse,
+        pointer,
         &mut actions,
     );
 
@@ -233,7 +236,7 @@ pub(crate) fn draw_settings_screen(
         vec2(left, row3_y),
         UiAction::MasterVolumeDecrease,
         UiAction::MasterVolumeIncrease,
-        mouse,
+        pointer,
         &mut actions,
     );
     draw_settings_stepper(
@@ -242,7 +245,7 @@ pub(crate) fn draw_settings_screen(
         vec2(right, row3_y),
         UiAction::EffectsVolumeDecrease,
         UiAction::EffectsVolumeIncrease,
-        mouse,
+        pointer,
         &mut actions,
     );
 
@@ -253,7 +256,7 @@ pub(crate) fn draw_settings_screen(
         vec2(left, row4_y),
         UiAction::AmbienceVolumeDecrease,
         UiAction::AmbienceVolumeIncrease,
-        mouse,
+        pointer,
         &mut actions,
     );
     if title_button(
@@ -269,7 +272,7 @@ pub(crate) fn draw_settings_screen(
         } else {
             ButtonTone::Muted
         },
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::ToggleHighContrast);
     }
@@ -280,7 +283,7 @@ pub(crate) fn draw_settings_screen(
         "Controls & How to Play",
         true,
         ButtonTone::Primary,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::OpenHelp);
     }
@@ -302,7 +305,7 @@ pub(crate) fn draw_settings_screen(
         } else {
             ButtonTone::Muted
         },
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::CloseSettings);
     }
@@ -317,7 +320,7 @@ pub(crate) fn draw_settings_screen(
             "Save & Quit",
             true,
             ButtonTone::Muted,
-            mouse,
+            pointer,
         )
     {
         actions.push(UiAction::BackToTitle);
@@ -347,7 +350,7 @@ fn draw_settings_stepper(
     origin: Vec2,
     decrease: UiAction,
     increase: UiAction,
-    mouse: Vec2,
+    pointer: Pointer,
     actions: &mut Vec<UiAction>,
 ) {
     let height = 38.0;
@@ -365,7 +368,7 @@ fn draw_settings_stepper(
         "-",
         true,
         ButtonTone::Muted,
-        mouse,
+        pointer,
     ) {
         actions.push(decrease);
     }
@@ -389,117 +392,9 @@ fn draw_settings_stepper(
         "+",
         true,
         ButtonTone::Muted,
-        mouse,
+        pointer,
     ) {
         actions.push(increase);
-    }
-}
-
-pub(crate) fn draw_help_screen(title_texture: Option<&Texture2D>) -> Vec<UiAction> {
-    draw_title_background(title_texture);
-    draw_title_scrim();
-    let mouse = logical_mouse_position();
-    let mut actions = Vec::new();
-    let panel = Rect::new(224.0, 82.0, 832.0, 570.0);
-    draw_surface(
-        panel,
-        &SurfaceStyle::new(Color::new(0.09, 0.045, 0.022, 0.97))
-            .with_border(2.0, Color::new(0.86, 0.62, 0.25, 0.82))
-            .with_inner_border(7.0, 1.0, Color::new(1.0, 0.84, 0.48, 0.14)),
-    );
-    draw_text_centered_in_box(
-        "Controls & How to Play",
-        panel.x,
-        panel.y + 22.0,
-        panel.w,
-        40.0,
-        28.0,
-        title_parchment(),
-    );
-    draw_text_centered_in_box(
-        "Restore every display before the doors open — or take your time in Relaxed Run.",
-        panel.x,
-        panel.y + 62.0,
-        panel.w,
-        26.0,
-        14.0,
-        Color::new(0.92, 0.78, 0.56, 0.84),
-    );
-
-    draw_help_column(
-        panel.x + 48.0,
-        panel.y + 116.0,
-        "CONTROLS",
-        &[
-            ("WASD", "Walk the shop floor"),
-            ("Mouse", "Look · click to lock"),
-            ("E / Space", "Pick up · shelf · repair"),
-            ("Q", "Cycle the Sorting Trolley"),
-            ("G", "Put the active toy down"),
-            ("T", "Open the tool rack"),
-            ("Tab", "Release or lock mouse look"),
-            ("Esc", "Pause and settings"),
-            ("F5", "Replay this exact layout"),
-        ],
-    );
-    draw_help_column(
-        panel.x + 432.0,
-        panel.y + 116.0,
-        "THE CLOSING ROUTINE",
-        &[
-            ("1", "Match toy category to display"),
-            ("2", "Rejoin broken pairs at a bench"),
-            ("3", "Finish displays to earn credits"),
-            ("4", "Buy tools that speed the shift"),
-            ("5", "Use the map for aisle progress"),
-            ("6", "Shelve all 240 toys to finish"),
-        ],
-    );
-
-    let y = panel.bottom() - 62.0;
-    if title_button(
-        Rect::new(panel.x + 184.0, y, 216.0, 40.0),
-        "Replay First-Shift Guide",
-        true,
-        ButtonTone::Primary,
-        mouse,
-    ) {
-        actions.push(UiAction::ReplayTutorial);
-    }
-    if title_button(
-        Rect::new(panel.x + 432.0, y, 216.0, 40.0),
-        "Back to Settings",
-        true,
-        ButtonTone::Muted,
-        mouse,
-    ) {
-        actions.push(UiAction::CloseHelp);
-    }
-    actions
-}
-
-fn draw_help_column(x: f32, y: f32, heading: &str, rows: &[(&str, &str)]) {
-    draw_ui_text_ex(
-        heading,
-        x,
-        y,
-        TextStyle::new(14.0, Color::new(1.0, 0.70, 0.24, 0.94)).params(),
-    );
-    for (index, (key, text)) in rows.iter().enumerate() {
-        let row_y = y + 34.0 + index as f32 * 43.0;
-        draw_plaque(
-            Rect::new(x, row_y - 21.0, 78.0, 29.0),
-            &title_plaque_style(),
-            &title_button_palette(ButtonTone::Muted),
-            PlaqueState::idle(true),
-        );
-        draw_text_centered_in_box(key, x, row_y - 22.0, 78.0, 29.0, 12.0, title_parchment());
-        draw_ui_text_ex(
-            text,
-            x + 92.0,
-            row_y,
-            TextStyle::new(14.0, Color::new(0.94, 0.88, 0.76, 0.92)).params(),
-        );
     }
 }
 
@@ -545,15 +440,38 @@ fn draw_title_scrim() {
     );
 }
 
-fn title_button(rect: Rect, text: &str, enabled: bool, tone: ButtonTone, mouse: Vec2) -> bool {
-    plaque_button(
+fn title_button(rect: Rect, text: &str, enabled: bool, tone: ButtonTone, pointer: Pointer) -> bool {
+    let style = title_plaque_style();
+    let palette = title_button_palette(tone);
+    let hovered = enabled && pointer.hovering_over(rect);
+    let pressed = enabled && pointer.pressing(rect);
+    let activated = enabled && pointer.released_on(rect);
+    draw_plaque(
         rect,
+        &style,
+        &palette,
+        PlaqueState {
+            enabled,
+            hovered,
+            pressed,
+            selected: false,
+        },
+    );
+    let text_color = if enabled {
+        palette.text
+    } else {
+        style.disabled_text
+    };
+    let nudge = if pressed { style.press_nudge } else { 0.0 };
+    draw_text_centered_in_box_ex(
         text,
-        &title_plaque_style(),
-        &title_button_palette(tone),
-        enabled,
-        mouse,
-    )
+        rect.x + 8.0,
+        rect.y + nudge - 1.0,
+        rect.w - 16.0,
+        rect.h,
+        TextStyle::new(style.label_size(rect.h), text_color),
+    );
+    activated
 }
 
 /// Toolkit plaque defaults were extracted from these exact title buttons;

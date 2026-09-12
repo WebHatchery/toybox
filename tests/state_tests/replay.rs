@@ -11,13 +11,14 @@
 //! change a number in `assets/data/*.json` and the difference in the report is
 //! entirely attributable to that change.
 
+#[path = "replay/runner.rs"]
 mod runner;
 
 use super::*;
-use crate::state::WorldPoint;
 use macroquad::prelude::{vec2, Vec2};
 use runner::*;
 use std::collections::HashSet;
+use toybox_after_hours::state::WorldPoint;
 
 /// How the closer decides what to do next.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -172,7 +173,7 @@ fn walk_to(session: &mut GameSession, data: &GameData, target: WorldPoint, walke
     };
 
     let speed = data.config.player_speed * session.speed_multiplier(data);
-    session.player.position = WorldPoint::from_vec2_for_replay(arrival);
+    session.player.position = WorldPoint::from_vec2(arrival);
     if to_target.length_squared() > f32::EPSILON {
         session.player.yaw = to_target.y.atan2(to_target.x);
     }
@@ -244,7 +245,7 @@ fn aim_and_pick_up(
 /// the shelf to a free spot the way a player scanning for a gap does.
 fn slot_is_free(
     session: &GameSession,
-    display: &crate::data::DisplayDef,
+    display: &toybox_after_hours::data::DisplayDef,
     slot_index: usize,
 ) -> bool {
     !session.toys.iter().any(|toy| {
@@ -255,7 +256,7 @@ fn slot_is_free(
 
 fn next_free_slot(
     session: &GameSession,
-    display: &crate::data::DisplayDef,
+    display: &toybox_after_hours::data::DisplayDef,
     from: usize,
 ) -> Option<usize> {
     (from..display.capacity).find(|slot| slot_is_free(session, display, *slot))
@@ -369,7 +370,7 @@ fn nearest_loose_toy_matching(
 fn nearest_matching_toy(
     session: &GameSession,
     data: &GameData,
-    display: &crate::data::DisplayDef,
+    display: &toybox_after_hours::data::DisplayDef,
     from: Vec2,
 ) -> Option<usize> {
     let mut radius = 2.0_f32;
@@ -466,7 +467,7 @@ fn home_display_index(
         .map(|(index, _)| index)
 }
 
-fn display_centre(display: &crate::data::DisplayDef) -> Vec2 {
+fn display_centre(display: &toybox_after_hours::data::DisplayDef) -> Vec2 {
     vec2(display.x + display.w * 0.5, display.y + display.h * 0.5)
 }
 
@@ -547,4 +548,5 @@ fn display_centre(display: &crate::data::DisplayDef) -> Vec2 {
 /// figures wrong by an order of magnitude with nothing to notice. These gates
 /// sit well above the shipped rates and well below the old ones, so density
 /// creeping back up shows here instead of in prose nobody re-measures.
+#[path = "replay/test_part_1.rs"]
 mod test_part_1;

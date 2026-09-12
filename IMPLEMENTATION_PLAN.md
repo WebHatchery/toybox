@@ -193,11 +193,13 @@ Acceptance: every plan item has direct test, capture, or published-artifact
 evidence; source-size standards pass; the worktree is clean after the final
 commit; no balance or UI claim relies on a partial replay or stale image.
 
-Status: completed on 2026-08-05. The normal suite passes 106 tests with the two
-diagnostic balance reports intentionally ignored; all three code-standards
-checks pass and Clippy accepts every target with warnings denied. The explicit
-shop-scale and full-shift reports reproduce the documented 27.9/17.6-minute
-sorting brackets and the 21.4-minute complete clear (240 shelves, 28 repairs,
-five tools, nine credits). All 26 scene captures and 50 toy references match at
-0.000% significant drift after inspection of the key UI states. `publish.ps1`
-builds, packages, and deploys both Windows and WebGL preview artifacts.
+Status: implementation and local verification completed on 2026-09-12. The
+normal suite passes 107 tests with the two diagnostic balance reports
+intentionally ignored; all code-standards checks pass and Clippy accepts every
+target with warnings denied. The explicit shop-scale and full-shift reports
+complete successfully, and the native ten-second benchmark measured 171.3 FPS
+with one slow frame after warm-up. `publish.ps1` builds and packages both
+Windows and WebGL artifacts, but the managed environment denies the configured
+Preview share and loopback browser access, so final mobile captures and remote
+deployment remain external follow-up. The working-tree commit is also pending
+because this session cannot create `.git/index.lock`.

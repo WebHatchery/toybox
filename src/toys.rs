@@ -33,7 +33,7 @@ mod longtail_dragon;
 mod maze_box;
 mod octopus;
 mod owl;
-mod part_accents;
+pub mod part_accents;
 mod penguin;
 mod planet_race;
 mod primitives;

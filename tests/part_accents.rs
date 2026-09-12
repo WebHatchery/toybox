@@ -1,7 +1,7 @@
-use super::*;
-use crate::data::ToyCategory;
-use crate::toys::library::toy_profile;
 use std::collections::HashSet;
+use toybox_after_hours::data::ToyCategory;
+use toybox_after_hours::toys::library::toy_profile;
+use toybox_after_hours::toys::part_accents::{accent_for, PartAccent};
 
 /// Board games and building blocks have no face, so their renderers never
 /// call `draw_muzzle` or use `eye_spread`. Two accents differing only in

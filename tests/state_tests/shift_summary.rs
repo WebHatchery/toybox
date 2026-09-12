@@ -155,7 +155,7 @@ fn the_grade_separates_perfect_from_merely_finished() {
 #[test]
 fn the_shipped_shop_can_be_restored_completely() {
     let data = GameData::load().unwrap();
-    let session = crate::capture_scenes::store_restored(&data);
+    let session = toybox_after_hours::capture_scenes::store_restored(&data);
 
     assert_eq!(session.phase, GamePhase::Finished);
 

@@ -12,7 +12,8 @@ fn grant(session: &mut GameSession, data: &GameData, upgrade_id: &str) {
     else {
         return;
     };
-    if let crate::data::UpgradeEffect::MistakeForgiveness { mistakes } = upgrade.effect {
+    if let toybox_after_hours::data::UpgradeEffect::MistakeForgiveness { mistakes } = upgrade.effect
+    {
         session.player.mistake_guards_remaining += mistakes;
         session.player.mistake_guards_initialized = true;
     }
@@ -244,7 +245,7 @@ fn surplus_credits_buy_a_bounded_spotlight_and_survive_save_load() {
         ToolPurchaseResult::ServicePurchased {
             seconds_active,
             ..
-        } if seconds_active == crate::state::tools::STOCKROOM_SPOTLIGHT_SECONDS
+        } if seconds_active == toybox_after_hours::state::STOCKROOM_SPOTLIGHT_SECONDS
     ));
     assert_eq!(
         session.available_tool_credits(&data),
@@ -259,13 +260,13 @@ fn surplus_credits_buy_a_bounded_spotlight_and_survive_save_load() {
     assert!(matches!(
         session.purchase_stockroom_spotlight(&data),
         ToolPurchaseResult::ServicePurchased { seconds_active, .. }
-            if seconds_active == crate::state::tools::STOCKROOM_SPOTLIGHT_MAX_SECONDS
+            if seconds_active == toybox_after_hours::state::STOCKROOM_SPOTLIGHT_MAX_SECONDS
     ));
     let credits_at_capacity = session.available_tool_credits(&data);
     assert!(matches!(
         session.purchase_stockroom_spotlight(&data),
         ToolPurchaseResult::ServiceAtCapacity { seconds_active, .. }
-            if seconds_active == crate::state::tools::STOCKROOM_SPOTLIGHT_MAX_SECONDS
+            if seconds_active == toybox_after_hours::state::STOCKROOM_SPOTLIGHT_MAX_SECONDS
     ));
     assert_eq!(
         session.available_tool_credits(&data),
@@ -330,7 +331,7 @@ fn the_carry_full_message_names_a_tool_the_player_owns() {
         .find(|upgrade| {
             matches!(
                 upgrade.effect,
-                crate::data::UpgradeEffect::CarryLimit { .. }
+                toybox_after_hours::data::UpgradeEffect::CarryLimit { .. }
             )
         })
         .expect("a carry tool");
@@ -352,7 +353,7 @@ fn the_carry_full_message_names_a_tool_the_player_owns() {
 /// through one helper so the four cannot drift apart later.
 #[test]
 fn a_price_of_one_reads_as_one_credit() {
-    use crate::ui::credits_phrase;
+    use toybox_after_hours::ui::credits_phrase;
 
     assert_eq!(credits_phrase(1), "1 credit");
     assert_eq!(credits_phrase(0), "0 credits");

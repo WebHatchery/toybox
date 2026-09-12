@@ -279,17 +279,14 @@ fn camera_basis(yaw: f32, pitch: f32) -> (Vec3, Vec3, Vec3) {
 /// there, at the only range in the game where a player studies them closely,
 /// and the jitter drew them up to 23% apart. A real pair measured 0.88 against
 /// 1.03 — a bear whose head is visibly too big for its own body, moments before
-/// you press `E` to join them.
+/// you tap ACT to join them.
 ///
 /// Same shape of exemption as `floor_lift` just below: what makes a tumbled
 /// floor look alive makes a workbench look wrong.
-pub(crate) fn toy_draw_scale(index: usize, on_bench: bool) -> f32 {
+pub fn toy_draw_scale(index: usize, on_bench: bool) -> f32 {
     if on_bench {
         1.0
     } else {
         0.88 + ((index * 13) % 9) as f32 * 0.025
     }
 }
-
-#[cfg(test)]
-mod tests;

@@ -1,5 +1,5 @@
 // The shared file-size gate from CODE_STANDARDS §2.2 — the 800-line hard
-// limit on non-test lines — enforced under plain `cargo test`.
+// limit on total physical source lines — enforced under plain `cargo test`.
 
 use std::fs;
 use std::path::{Path, PathBuf};

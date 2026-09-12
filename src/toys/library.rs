@@ -80,7 +80,6 @@ impl ToySpawnPose {
         self.yaw == 0.0 && self.pitch == 0.0 && self.roll == 0.0 && self.floor_lift == 0.0
     }
 
-    #[cfg(test)]
     pub fn is_tumbled(self) -> bool {
         self.pitch.abs() > 0.4 || self.roll.abs() > 0.4
     }

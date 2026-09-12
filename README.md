@@ -32,8 +32,8 @@ personal history across varied layouts. Tools do not carry between shifts; the
 record is the only thread from one run to the next.
 
 A first-shift guide teaches movement, pickup, category shelving, repairs,
-display credits, and trolley cycling as each becomes relevant. Press `H` to
-hide it; **Controls & How to Play** in Settings can replay it later.
+display credits, and trolley cycling as each becomes relevant. Tap **SKIP
+GUIDE** to hide it; **Controls & How to Play** in Settings can replay it later.
 
 ## The Store
 
@@ -86,11 +86,17 @@ store.
 
 ## Controls
 
+The browser HUD always shows touch buttons for looking, walking, ACT, CARRY,
+DROP, TOOLS, and PAUSE. Drag the view or tap the arrow buttons to look; tap
+the movement buttons to walk. ACT picks up, loads another toy onto the
+trolley, shelves, places repair parts on the bench, or puts the active toy on
+the floor. No mouse capture or pointer lock is required.
+
+Keyboard and mouse remain optional shortcuts:
+
 - `WASD`: move relative to the first-person view
 - Mouse or arrow keys: look around, including up and down
-- Click the shop view to lock mouse look; `Tab` or `Esc` releases it
-- `E` or `Space`: pick up, load another toy onto the trolley, shelf, place
-  repair parts on the bench, or put the active toy on the floor
+- `E` or `Space`: activate ACT
 - `Q`: cycle which carried toy is active
 - `G`: quick-drop the active toy
 - `T`: open or close the shop tools screen
@@ -113,7 +119,7 @@ cargo clippy --all-targets --all-features -- -D warnings
 ```
 
 Balance numbers come from deterministic replays in
-`src/state/tests/replay.rs`, which drive the real `GameSession` API rather than
+`tests/state_tests/replay.rs`, which drive the real `GameSession` API rather than
 a model of it. The normal suite requires the earned-tool route to finish all
 240 toys with every repair complete and at least 15% deadline headroom. Two
 diagnostic reports are `#[ignore]`d because they are only wanted when retuning:
@@ -123,9 +129,7 @@ cargo test --release shop_scale -- --ignored --nocapture   # run length vs shop 
 cargo test --release full_shift -- --ignored --nocapture   # whole shop, start to finish
 ```
 
-Final review verification on 2026-08-05 passed 106 normal tests plus three
-code-standards checks, warning-free Clippy, both explicit balance reports, all
-76 visual references (26 scenes and 50 toys at 0.000% significant drift), and
-the complete Windows/WebGL `publish.ps1` path.
-
-Outstanding work is tracked in [`TODO.md`](TODO.md).
+The integration tests live in `tests/`, with five-case coverage treated as the
+default for a major feature. Smaller suites are intentionally narrow for
+single schemas, render math, and persistence adapters; the larger state and
+replay suites cover the gameplay branches.

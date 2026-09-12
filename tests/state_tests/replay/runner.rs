@@ -112,7 +112,7 @@ pub(super) fn restore_one_pair(
 /// unequipped through the part of the run where help compounds most.
 pub(super) fn buy_what_it_can_afford(session: &mut GameSession, data: &GameData) {
     loop {
-        let mut affordable: Vec<&crate::data::UpgradeDef> = data
+        let mut affordable: Vec<&toybox_after_hours::data::UpgradeDef> = data
             .upgrades
             .iter()
             .filter(|upgrade| {

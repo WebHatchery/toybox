@@ -35,7 +35,7 @@ impl Cue {
         Cue::Restored,
     ];
 
-    fn cooldown(self) -> f32 {
+    pub fn cooldown(self) -> f32 {
         match self {
             Cue::Footstep => 0.34,
             Cue::Pickup | Cue::Drop | Cue::ShelfCorrect | Cue::ShelfWrong => 0.08,
@@ -47,14 +47,14 @@ impl Cue {
     }
 }
 
-fn config() -> SynthConfig {
+pub fn config() -> SynthConfig {
     SynthConfig {
         sample_rate: 22_050,
         master_gain: 0.28,
     }
 }
 
-fn voices_for(cue: Cue) -> Vec<Voice> {
+pub fn voices_for(cue: Cue) -> Vec<Voice> {
     match cue {
         Cue::Footstep => vec![
             Voice::tone(0.0, 0.075, 120.0, 0.16)
@@ -112,7 +112,7 @@ fn voices_for(cue: Cue) -> Vec<Voice> {
     }
 }
 
-fn ambience_voices() -> Vec<Voice> {
+pub fn ambience_voices() -> Vec<Voice> {
     let mut voices = Vec::new();
     for (start, root, bell) in [
         (0.0, 196.0, 523.0),
@@ -196,6 +196,10 @@ impl AudioDirector {
         }
     }
 
+    pub fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
     pub fn start_ambience(&mut self) {
         if !self.enabled || self.ambience_started {
             return;
@@ -241,12 +245,17 @@ impl AudioDirector {
         self.cooldowns.insert(cue, cue.cooldown());
     }
 
-    fn channel_allows(&self, cue: Cue) -> bool {
+    pub fn channel_allows(&self, cue: Cue) -> bool {
         self.enabled
             && self.effects_volume > 0.0
             && self.cooldowns.get(&cue).copied().unwrap_or(0.0) <= 0.0
     }
-}
 
-#[cfg(test)]
-mod tests;
+    pub fn cooldown_count(&self) -> usize {
+        self.cooldowns.len()
+    }
+
+    pub fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+}

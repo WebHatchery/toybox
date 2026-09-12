@@ -1,4 +1,5 @@
-use super::*;
+use toybox_after_hours::data::GameData;
+use toybox_after_hours::preferences::*;
 
 #[test]
 fn older_preferences_receive_accessible_defaults() {
@@ -16,7 +17,7 @@ fn externally_edited_values_are_clamped() {
         mouse_sensitivity: 0.1,
         ..Default::default()
     };
-    preferences.sanitize();
+    preferences.sanitize_with_config(&GameData::load().unwrap().config);
     assert_eq!(preferences.fov_degrees, 110.0);
     assert_eq!(preferences.mouse_sensitivity, 0.5);
 }

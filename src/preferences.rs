@@ -1,6 +1,7 @@
 //! Toybox-specific preferences that do not belong in the shared display and
 //! audio settings model.
 
+use crate::data::GameConfig;
 use macroquad_toolkit::persistence::{load_json_key, save_json_key};
 use serde::{Deserialize, Serialize};
 
@@ -27,9 +28,9 @@ impl Default for ToyboxPreferences {
 }
 
 impl ToyboxPreferences {
-    pub fn load(game_name: &str) -> Self {
+    pub fn load(game_name: &str, config: &GameConfig) -> Self {
         let mut preferences: Self = load_json_key(game_name, PREFERENCES_KEY).unwrap_or_default();
-        preferences.sanitize();
+        preferences.sanitize_with_config(config);
         preferences
     }
 
@@ -37,11 +38,12 @@ impl ToyboxPreferences {
         save_json_key(game_name, PREFERENCES_KEY, self)
     }
 
-    pub fn sanitize(&mut self) {
-        self.fov_degrees = self.fov_degrees.clamp(60.0, 110.0);
-        self.mouse_sensitivity = self.mouse_sensitivity.clamp(0.5, 2.0);
+    pub fn sanitize_with_config(&mut self, config: &GameConfig) {
+        self.fov_degrees = self
+            .fov_degrees
+            .clamp(config.fov_min_degrees, config.fov_max_degrees);
+        self.mouse_sensitivity = self
+            .mouse_sensitivity
+            .clamp(config.sensitivity_min, config.sensitivity_max);
     }
 }
-
-#[cfg(test)]
-mod tests;

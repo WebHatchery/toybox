@@ -20,7 +20,7 @@ use macroquad::prelude::*;
 /// What tops a head. Deliberately a small set: these are read at a glance, from
 /// across an aisle, on an object the size of a fist.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum Crest {
+pub enum Crest {
     /// Nothing on top — smooth domes, lids, plain blocks.
     Bare,
     /// Two round blobs, high and wide. Bears, most bots.
@@ -38,7 +38,7 @@ pub(super) enum Crest {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(super) struct PartAccent {
+pub struct PartAccent {
     pub crest: Crest,
     /// Multiplier on the identity's accent geometry: crest size on a head,
     /// limb size on a body.
@@ -63,7 +63,7 @@ impl PartAccent {
 /// The cues for one identity. Every arm is chosen so that the ten identities
 /// sharing a category renderer differ from *each other* — matching the whole
 /// toy is secondary, because the player never sees both at once.
-pub(super) fn accent_for(identity: ToyIdentity) -> PartAccent {
+pub fn accent_for(identity: ToyIdentity) -> PartAccent {
     use Crest::*;
     use ToyIdentity as T;
 
@@ -220,6 +220,3 @@ pub(super) fn draw_crest(
         }
     }
 }
-
-#[cfg(test)]
-mod tests;

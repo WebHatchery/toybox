@@ -19,17 +19,18 @@ mod hud_chrome;
 mod hud_icons;
 mod minimap;
 mod scanner;
-mod scene3d;
+pub mod scene3d;
 mod score;
 mod signs;
 mod space;
 mod title;
+mod touch_controls;
 mod tutorial;
 mod widgets;
 mod wood;
 
 pub use debug_overlay::DebugOverlay;
-use hud::{draw_game_hud, pointer_blocking_rects};
+use hud::draw_game_hud;
 pub(crate) use hud_chrome::set_high_contrast;
 use hud_chrome::{brass, draw_hud_panel, parchment, warm_card, warm_panel};
 use scene3d::draw_shop_scene;
@@ -114,8 +115,17 @@ pub enum UiAction {
     Interact,
     CycleCarry,
     DropActive,
+    SkipTutorial,
     BuyTool(String),
     BuyStockroomSpotlight,
+    MoveForward,
+    MoveBackward,
+    MoveLeft,
+    MoveRight,
+    LookUp,
+    LookDown,
+    LookLeft,
+    LookRight,
 }
 
 /// A compact but exact human-readable form of the persisted 64-bit seed.
@@ -132,7 +142,6 @@ pub(crate) fn shift_seed_code(seed: u64) -> String {
 pub struct UiContext<'a> {
     pub data: &'a GameData,
     pub session: &'a GameSession,
-    pub mouse_locked: bool,
     pub fov_degrees: f32,
     /// The best run recorded for the mode being played, if there is one, and
     /// whether the run now finishing beat it. Only the score screen reads them.
@@ -145,17 +154,18 @@ pub fn draw_game_ui(ctx: UiContext<'_>, overlay: &DebugOverlay) -> Vec<UiAction>
     let stats = draw_shop_scene(&ctx);
     set_ui_camera();
 
-    let actions = Vec::new();
+    let mut actions = Vec::new();
 
     // The score screen is the whole message once a run ends; leaving the HUD
     // and minimap under it just crowds the panel with numbers it already shows.
     if ctx.session.phase.is_over() {
-        score::draw_score_screen(&ctx);
+        actions.extend(score::draw_score_screen(&ctx));
     } else {
         draw_game_hud(&ctx);
         minimap::draw_minimap(&ctx);
+        touch_controls::draw_touch_controls(&mut actions);
         if let Some(hint) = ctx.tutorial_hint {
-            tutorial::draw_tutorial_hint(hint);
+            tutorial::draw_tutorial_hint(hint, &mut actions);
         }
     }
     overlay.draw(&ctx, &stats);
@@ -176,7 +186,7 @@ pub(crate) fn draw_tool_shop_screen(ctx: UiContext<'_>) -> Vec<UiAction> {
     );
 
     let mut actions = Vec::new();
-    let mouse = logical_mouse_position();
+    let pointer = logical_pointer();
     // Tall enough for two description lines per row: at one line, four of the
     // five tools ended mid-word and the player was buying blind.
     let panel = Rect::new(260.0, 34.0, 760.0, 652.0);
@@ -225,13 +235,13 @@ pub(crate) fn draw_tool_shop_screen(ctx: UiContext<'_>) -> Vec<UiAction> {
         Rect::new(panel.right() - 112.0, panel.y + 27.0, 82.0, 42.0),
         "Back",
         true,
-        mouse,
+        pointer,
     ) {
         actions.push(UiAction::CloseToolShop);
     }
 
     if ctx.session.all_tools_owned(ctx.data) {
-        draw_stockroom_service(panel, &ctx, mouse, &mut actions);
+        draw_stockroom_service(panel, &ctx, pointer, &mut actions);
     } else {
         for (index, upgrade) in ctx.data.upgrades.iter().enumerate() {
             let row = Rect::new(
@@ -240,7 +250,7 @@ pub(crate) fn draw_tool_shop_screen(ctx: UiContext<'_>) -> Vec<UiAction> {
                 panel.w - 48.0,
                 92.0,
             );
-            draw_tool_row(row, upgrade, &ctx, mouse, &mut actions);
+            draw_tool_row(row, upgrade, &ctx, pointer, &mut actions);
         }
     }
 
@@ -250,7 +260,7 @@ pub(crate) fn draw_tool_shop_screen(ctx: UiContext<'_>) -> Vec<UiAction> {
 fn draw_stockroom_service(
     panel: Rect,
     ctx: &UiContext<'_>,
-    mouse: Vec2,
+    pointer: Pointer,
     actions: &mut Vec<UiAction>,
 ) {
     draw_ui_text_ex(
@@ -323,7 +333,7 @@ fn draw_stockroom_service(
         TextStyle::new(14.0, Color::new(0.96, 0.78, 0.36, 1.0)).params(),
     );
     let button = Rect::new(card.right() - 122.0, card.y + 62.0, 94.0, 42.0);
-    if tool_shop_button(button, "Call", can_buy, mouse) {
+    if tool_shop_button(button, "Call", can_buy, pointer) {
         actions.push(UiAction::BuyStockroomSpotlight);
     }
 }
@@ -357,17 +367,13 @@ pub fn continuous_mouse_delta_pixels() -> Vec2 {
 
 pub fn look_delta_from_input(
     mouse_delta: Vec2,
-    mouse_locked: bool,
     dt: f32,
     sensitivity: f32,
+    sensitivity_min: f32,
+    sensitivity_max: f32,
 ) -> Vec2 {
-    let mut yaw_delta = 0.0;
-    let mut pitch_delta = 0.0;
-
-    if mouse_locked {
-        yaw_delta += mouse_delta.x * 0.0032;
-        pitch_delta -= mouse_delta.y * 0.0032;
-    }
+    let mut yaw_delta = mouse_delta.x * 0.0032;
+    let mut pitch_delta = -mouse_delta.y * 0.0032;
 
     let keyboard_speed = 1.75 * dt;
     if is_key_down(KeyCode::Left) {
@@ -383,24 +389,14 @@ pub fn look_delta_from_input(
         pitch_delta -= keyboard_speed;
     }
 
-    vec2(yaw_delta, pitch_delta) * sensitivity.clamp(0.5, 2.0)
-}
-
-pub fn should_lock_mouse_from_screen_position(screen_position: Vec2) -> bool {
-    let logical = vec2(
-        screen_position.x * LOGICAL_WIDTH / screen_width().max(1.0),
-        screen_position.y * LOGICAL_HEIGHT / screen_height().max(1.0),
-    );
-    !pointer_blocking_rects()
-        .iter()
-        .any(|rect| rect.contains_point(logical))
+    vec2(yaw_delta, pitch_delta) * sensitivity.clamp(sensitivity_min, sensitivity_max)
 }
 
 fn draw_tool_row(
     rect: Rect,
     upgrade: &UpgradeDef,
     ctx: &UiContext<'_>,
-    mouse: Vec2,
+    pointer: Pointer,
     actions: &mut Vec<UiAction>,
 ) {
     let (status, status_color, can_buy) = tool_status(upgrade, ctx);
@@ -475,7 +471,7 @@ fn draw_tool_row(
     } else {
         "Need credit"
     };
-    if tool_shop_button(button, button_label, can_buy, mouse) {
+    if tool_shop_button(button, button_label, can_buy, pointer) {
         actions.push(UiAction::BuyTool(upgrade.id.clone()));
     }
 }
@@ -519,10 +515,10 @@ fn tool_status(upgrade: &UpgradeDef, ctx: &UiContext<'_>) -> (String, Color, boo
     )
 }
 
-fn tool_shop_button(rect: Rect, label: &str, enabled: bool, mouse: Vec2) -> bool {
-    let hovered = enabled && rect.contains_point(mouse);
-    let pressed = hovered && is_mouse_button_down(MouseButton::Left);
-    let activated = hovered && is_mouse_button_released(MouseButton::Left);
+fn tool_shop_button(rect: Rect, label: &str, enabled: bool, pointer: Pointer) -> bool {
+    let hovered = enabled && pointer.hovering_over(rect);
+    let pressed = enabled && pointer.pressing(rect);
+    let activated = enabled && pointer.released_on(rect);
     let face = if !enabled {
         Color::new(0.085, 0.055, 0.042, 0.90)
     } else if pressed {
@@ -552,10 +548,11 @@ fn tool_shop_button(rect: Rect, label: &str, enabled: bool, mouse: Vec2) -> bool
     activated
 }
 
-fn logical_mouse_position() -> Vec2 {
-    let (screen_x, screen_y) = mouse_position();
-    vec2(
-        screen_x * LOGICAL_WIDTH / screen_width().max(1.0),
-        screen_y * LOGICAL_HEIGHT / screen_height().max(1.0),
-    )
+fn logical_pointer() -> Pointer {
+    Pointer::read(|position| {
+        vec2(
+            position.x * LOGICAL_WIDTH / screen_width().max(1.0),
+            position.y * LOGICAL_HEIGHT / screen_height().max(1.0),
+        )
+    })
 }

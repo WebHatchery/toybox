@@ -21,10 +21,6 @@ pub(super) fn draw_game_hud(ctx: &UiContext<'_>) {
     draw_crosshair(ctx);
 }
 
-pub(super) fn pointer_blocking_rects() -> [Rect; 2] {
-    [status_panel_rect(), carried_card_rect()]
-}
-
 fn draw_status_panel(ctx: &UiContext<'_>) {
     let rect = status_panel_rect();
     draw_hud_panel(rect, warm_panel(0.90), hud_border());
@@ -519,10 +515,10 @@ fn draw_context_prompt(ctx: &UiContext<'_>) {
 
 fn prompt_for_interaction(ctx: &UiContext<'_>) -> Option<PromptVisual> {
     let prompt = match ctx.session.interaction_preview(ctx.data) {
-        InteractionPreview::PlaceOnShelf => PromptVisual::action("E", "Place on shelf"),
-        InteractionPreview::PlaceOnRepairBench => PromptVisual::action("E", "Place on bench"),
+        InteractionPreview::PlaceOnShelf => PromptVisual::action("ACT", "Place on shelf"),
+        InteractionPreview::PlaceOnRepairBench => PromptVisual::action("ACT", "Place on bench"),
         InteractionPreview::RepairReady { toy_name } => {
-            PromptVisual::action("E", format!("Repair {toy_name}"))
+            PromptVisual::action("ACT", format!("Repair {toy_name}"))
         }
         InteractionPreview::RepairBenchFull => PromptVisual::warning("Bench full"),
         // Now the common case is carrying a part to a bench already holding
@@ -538,19 +534,14 @@ fn prompt_for_interaction(ctx: &UiContext<'_>) -> Option<PromptVisual> {
             // needs must survive the ellipsis.
         } => PromptVisual::neutral(format!("Needs the {} - {toy_name}", missing_part.label())),
         InteractionPreview::NeedsRepair => PromptVisual::warning("Repair at the bench first"),
-        InteractionPreview::PutDown => PromptVisual::action("E", "Place on floor"),
+        InteractionPreview::PutDown => PromptVisual::action("ACT", "Place on floor"),
         InteractionPreview::Pickup { toy_name } => {
-            PromptVisual::action("E", format!("Pick up {toy_name}"))
+            PromptVisual::action("ACT", format!("Pick up {toy_name}"))
         }
         InteractionPreview::InventoryFull => PromptVisual::warning("Carry full"),
         InteractionPreview::ShelfFull => PromptVisual::warning("Shelf full"),
         InteractionPreview::LookAtEmptySlot => PromptVisual::neutral("Aim at an empty shelf spot"),
-        InteractionPreview::NothingNearby => {
-            if ctx.mouse_locked {
-                return None;
-            }
-            PromptVisual::neutral("Click to look")
-        }
+        InteractionPreview::NothingNearby => PromptVisual::neutral("Use the view controls to look"),
         InteractionPreview::Finished => PromptVisual::good("Store restored"),
         InteractionPreview::ShiftOver => PromptVisual::warning("The doors are open"),
     };
@@ -563,11 +554,7 @@ fn draw_crosshair(ctx: &UiContext<'_>) {
     }
 
     let center = vec2(LOGICAL_WIDTH * 0.5, LOGICAL_HEIGHT * 0.5);
-    let color = if ctx.mouse_locked {
-        Color::new(1.0, 0.75, 0.24, 0.90)
-    } else {
-        Color::new(0.80, 0.82, 0.86, 0.34)
-    };
+    let color = Color::new(1.0, 0.75, 0.24, 0.90);
     draw_circle_lines(center.x, center.y, 11.0, 1.2, color);
     draw_circle(
         center.x,

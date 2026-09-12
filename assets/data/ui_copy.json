@@ -1,0 +1,40 @@
+{
+  "tutorial": [
+    {
+      "eyebrow": "FIRST SHIFT · 1/6",
+      "title": "LOOK AROUND THE SHOP",
+      "body": "Drag the view or tap the arrow buttons to look. Tap W, A, S, or D to walk.",
+      "keys": ["VIEW", "MOVE"]
+    },
+    {
+      "eyebrow": "FIRST SHIFT · 2/6",
+      "title": "PICK UP A TOY",
+      "body": "Aim at a loose toy, then tap ACT. The prompt shows what will happen next.",
+      "keys": ["ACT"]
+    },
+    {
+      "eyebrow": "FIRST SHIFT · 3/6",
+      "title": "MATCH THE CATEGORY",
+      "body": "Carry it to a matching display, aim at an empty spot, and tap ACT.",
+      "keys": ["ACT"]
+    },
+    {
+      "eyebrow": "FIRST SHIFT · 4/6",
+      "title": "MEND A MATCHED PAIR",
+      "body": "Find the other half, place both on one bench, then tap ACT to repair.",
+      "keys": ["ACT"]
+    },
+    {
+      "eyebrow": "FIRST SHIFT · 5/6",
+      "title": "SPEND A DISPLAY CREDIT",
+      "body": "Each restored display earns one credit. Tap TOOLS to improve this shift.",
+      "keys": ["TOOLS"]
+    },
+    {
+      "eyebrow": "FIRST SHIFT · 6/6",
+      "title": "CHOOSE THE ACTIVE TOY",
+      "body": "The bright trolley token is in your hands. Tap CARRY to choose another toy.",
+      "keys": ["CARRY"]
+    }
+  ]
+}

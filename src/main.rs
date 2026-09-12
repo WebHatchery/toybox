@@ -2,19 +2,7 @@
 
 use macroquad::prelude::*;
 use macroquad_toolkit::capture;
-
-mod audio;
-mod capture_scenes;
-mod data;
-mod gallery;
-mod game;
-mod preferences;
-mod state;
-mod toys;
-mod tutorial;
-mod ui;
-
-use game::Game;
+use toybox_after_hours::{game, ui, Game};
 
 fn window_conf() -> Conf {
     let mut conf = capture::capture_window_conf(

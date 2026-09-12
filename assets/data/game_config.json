@@ -19,5 +19,14 @@
   "toy_pose_distance": 5.0,
   "toy_view_cull_min_dot": 0.15,
   "toy_always_draw_radius": 3.0,
-  "debug_overlay_enabled": true
+  "debug_overlay_enabled": true,
+  "fov_min_degrees": 60.0,
+  "fov_max_degrees": 110.0,
+  "fov_step_degrees": 5.0,
+  "sensitivity_min": 0.5,
+  "sensitivity_max": 2.0,
+  "sensitivity_step": 0.1,
+  "ui_scale_min": 0.9,
+  "ui_scale_max": 1.2,
+  "ui_scale_step": 0.1
 }

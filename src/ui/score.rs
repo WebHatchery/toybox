@@ -6,7 +6,7 @@
 //! telling the player what to do next.
 
 use super::hud_chrome::{brass, draw_hud_panel, parchment, warm_card, warm_panel};
-use super::{shift_seed_code, UiContext, LOGICAL_HEIGHT, LOGICAL_WIDTH};
+use super::{shift_seed_code, UiAction, UiContext, LOGICAL_HEIGHT, LOGICAL_WIDTH};
 use crate::state::{GamePhase, ShiftRecord, ShiftSummary, ZoneProgress};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
@@ -19,7 +19,8 @@ const PANEL: Rect = Rect {
     h: 576.0,
 };
 
-pub(super) fn draw_score_screen(ctx: &UiContext<'_>) {
+pub(super) fn draw_score_screen(ctx: &UiContext<'_>) -> Vec<UiAction> {
+    let mut actions = Vec::new();
     let summary = ctx.session.shift_summary(ctx.data);
     let restored = ctx.session.phase == GamePhase::Finished;
     let accent = if restored {
@@ -74,9 +75,12 @@ pub(super) fn draw_score_screen(ctx: &UiContext<'_>) {
         ],
     );
 
-    draw_zone_table(&summary, PANEL.y + 232.0, accent);
+    draw_zone_table(&summary, PANEL.y + 212.0, accent);
     draw_best_run(ctx.best_run, ctx.beat_record, accent);
     draw_footer(restored);
+
+    draw_score_actions(ctx, &mut actions);
+    actions
 }
 
 fn draw_heading(
@@ -276,7 +280,7 @@ fn draw_zone_row(name: &str, zone: ZoneProgress, y: f32, accent: Color) {
 /// one run — so without this the game scores you and forgets. A record is the
 /// only thread between runs, which is why it is worth the separate save slot.
 fn draw_best_run(best: Option<ShiftRecord>, beat_record: bool, accent: Color) {
-    let y = PANEL.y + PANEL.h - 94.0;
+    let y = PANEL.y + PANEL.h - 112.0;
     let text = match best {
         Some(record) if beat_record => format!(
             "New best: {} toys in {}",
@@ -307,19 +311,63 @@ fn draw_footer(restored: bool) {
             "Opening time caught up with you."
         },
         PANEL.x,
-        PANEL.y + PANEL.h - 66.0,
+        PANEL.y + PANEL.h - 80.0,
         PANEL.w,
         24.0,
         16.0,
         parchment(0.62),
     );
-    draw_text_centered_in_box(
-        "R Fresh Shift  -  F5 Replay Layout  -  Esc Menu",
-        PANEL.x,
-        PANEL.y + PANEL.h - 38.0,
-        PANEL.w,
-        24.0,
-        14.0,
-        parchment(0.52),
-    );
+}
+
+fn draw_score_actions(ctx: &UiContext<'_>, actions: &mut Vec<UiAction>) {
+    let pointer = super::logical_pointer();
+    let y = PANEL.y + PANEL.h - 48.0;
+    let buttons = [
+        (
+            Rect::new(PANEL.x + 28.0, y, 208.0, 44.0),
+            "NEW SHIFT",
+            match ctx.session.shift_mode {
+                crate::state::ShiftMode::Timed => UiAction::NewGame,
+                crate::state::ShiftMode::Relaxed => UiAction::NewRelaxedGame,
+            },
+        ),
+        (
+            Rect::new(PANEL.x + 266.0, y, 208.0, 44.0),
+            "REPLAY LAYOUT",
+            UiAction::ReplayShiftSeed,
+        ),
+        (
+            Rect::new(PANEL.x + 504.0, y, 208.0, 44.0),
+            "MENU",
+            UiAction::BackToTitle,
+        ),
+    ];
+
+    for (rect, label, action) in buttons {
+        let hovered = pointer.hovering_over(rect);
+        let pressed = pointer.pressing(rect);
+        draw_surface(
+            rect,
+            &SurfaceStyle::new(if pressed {
+                Color::new(0.46, 0.27, 0.09, 0.98)
+            } else if hovered {
+                Color::new(0.36, 0.21, 0.07, 0.98)
+            } else {
+                Color::new(0.23, 0.13, 0.05, 0.98)
+            })
+            .with_border(1.0, brass(0.72)),
+        );
+        draw_text_centered_in_box(
+            label,
+            rect.x,
+            rect.y + 1.0,
+            rect.w,
+            rect.h,
+            13.0,
+            parchment(1.0),
+        );
+        if pointer.released_on(rect) {
+            actions.push(action);
+        }
+    }
 }

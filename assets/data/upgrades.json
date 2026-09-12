@@ -10,7 +10,7 @@
   {
     "id": "sorting_trolley",
     "name": "Sorting Trolley",
-    "description": "Wheel three toys at once instead of one. Aim at another toy and press E to load it, Q to cycle what you are holding.",
+    "description": "Wheel three toys instead of one. Aim at a toy and tap ACT to load it, then tap CARRY to cycle what you are holding.",
     "unlock_completed_displays": 2,
     "cost": 2,
     "effect": { "kind": "carry_limit", "toys": 3 }

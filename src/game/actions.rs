@@ -70,7 +70,6 @@ impl Game {
             }
             UiAction::Settings => {
                 self.settings_from_game = self.screen == GameScreen::Playing;
-                self.set_mouse_locked(false);
                 self.screen = GameScreen::Settings;
             }
             UiAction::CloseSettings => {
@@ -85,16 +84,22 @@ impl Game {
                 self.save_game();
                 self.audio.stop_ambience();
                 self.settings_from_game = false;
-                self.set_mouse_locked(false);
                 self.screen = GameScreen::Title;
                 self.has_save_file =
                     slot_exists(&self.data.config.game_name, &self.data.config.save_slot);
             }
             UiAction::OpenToolShop => {
                 self.tutorial.opened_tools();
-                self.set_mouse_locked(false);
                 self.screen = GameScreen::ToolShop;
             }
+            UiAction::MoveForward => self.touch_movement.y += 1.0,
+            UiAction::MoveBackward => self.touch_movement.y -= 1.0,
+            UiAction::MoveLeft => self.touch_movement.x -= 1.0,
+            UiAction::MoveRight => self.touch_movement.x += 1.0,
+            UiAction::LookUp => self.touch_look.y += 1.0,
+            UiAction::LookDown => self.touch_look.y -= 1.0,
+            UiAction::LookLeft => self.touch_look.x -= 1.0,
+            UiAction::LookRight => self.touch_look.x += 1.0,
             UiAction::CloseToolShop => self.screen = GameScreen::Playing,
             UiAction::ToggleFullscreen => {
                 self.settings.toggle_fullscreen();
@@ -103,33 +108,47 @@ impl Game {
                 }
             }
             UiAction::FovIncrease => {
-                self.preferences.fov_degrees = (self.preferences.fov_degrees + FOV_STEP_DEGREES)
-                    .clamp(MIN_FOV_DEGREES, MAX_FOV_DEGREES);
+                self.preferences.fov_degrees =
+                    (self.preferences.fov_degrees + self.data.config.fov_step_degrees).clamp(
+                        self.data.config.fov_min_degrees,
+                        self.data.config.fov_max_degrees,
+                    );
                 self.save_preferences();
             }
             UiAction::FovDecrease => {
-                self.preferences.fov_degrees = (self.preferences.fov_degrees - FOV_STEP_DEGREES)
-                    .clamp(MIN_FOV_DEGREES, MAX_FOV_DEGREES);
+                self.preferences.fov_degrees =
+                    (self.preferences.fov_degrees - self.data.config.fov_step_degrees).clamp(
+                        self.data.config.fov_min_degrees,
+                        self.data.config.fov_max_degrees,
+                    );
                 self.save_preferences();
             }
             UiAction::SensitivityIncrease => {
                 self.preferences.mouse_sensitivity =
-                    (self.preferences.mouse_sensitivity + SENSITIVITY_STEP).clamp(0.5, 2.0);
+                    (self.preferences.mouse_sensitivity + self.data.config.sensitivity_step).clamp(
+                        self.data.config.sensitivity_min,
+                        self.data.config.sensitivity_max,
+                    );
                 self.save_preferences();
             }
             UiAction::SensitivityDecrease => {
                 self.preferences.mouse_sensitivity =
-                    (self.preferences.mouse_sensitivity - SENSITIVITY_STEP).clamp(0.5, 2.0);
+                    (self.preferences.mouse_sensitivity - self.data.config.sensitivity_step).clamp(
+                        self.data.config.sensitivity_min,
+                        self.data.config.sensitivity_max,
+                    );
                 self.save_preferences();
             }
             UiAction::UiScaleIncrease => {
-                self.settings.ui_text_scale =
-                    (self.settings.ui_text_scale + UI_SCALE_STEP).clamp(0.9, 1.2);
+                self.settings.ui_text_scale = (self.settings.ui_text_scale
+                    + self.data.config.ui_scale_step)
+                    .clamp(self.data.config.ui_scale_min, self.data.config.ui_scale_max);
                 self.save_shared_settings();
             }
             UiAction::UiScaleDecrease => {
-                self.settings.ui_text_scale =
-                    (self.settings.ui_text_scale - UI_SCALE_STEP).clamp(0.9, 1.2);
+                self.settings.ui_text_scale = (self.settings.ui_text_scale
+                    - self.data.config.ui_scale_step)
+                    .clamp(self.data.config.ui_scale_min, self.data.config.ui_scale_max);
                 self.save_shared_settings();
             }
             UiAction::ToggleHighContrast => {
@@ -179,7 +198,6 @@ impl Game {
             }
             UiAction::QuitGame => {
                 self.audio.stop_ambience();
-                self.set_mouse_locked(false);
                 quit();
             }
             UiAction::Save => self.save_game(),
@@ -203,6 +221,13 @@ impl Game {
                     self.notifications
                         .info(format!("Placed {} on the floor", toy_name));
                 }
+            }
+            UiAction::SkipTutorial => {
+                self.tutorial.skip();
+                self.preferences.tutorial_complete = true;
+                self.save_preferences();
+                self.notifications
+                    .info("First-shift guide hidden. Replay it from Settings");
             }
             UiAction::BuyTool(tool_id) => self.handle_tool_purchase(&tool_id),
             UiAction::BuyStockroomSpotlight => self.handle_stockroom_spotlight_purchase(),
@@ -256,7 +281,7 @@ impl Game {
                 }
                 for tool_name in available_tools {
                     self.notifications
-                        .info(format!("Tool available: {} (press T)", tool_name));
+                        .info(format!("Tool available: {} (open TOOLS)", tool_name));
                 }
                 if finished {
                     self.notifications.success("Store restored before opening");

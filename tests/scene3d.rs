@@ -1,4 +1,4 @@
-use super::toy_draw_scale;
+use toybox_after_hours::ui::scene3d::toy_draw_scale;
 
 #[test]
 fn two_halves_on_a_bench_are_drawn_the_same_size() {

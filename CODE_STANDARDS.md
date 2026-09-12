@@ -259,8 +259,10 @@ Use project-local asset paths and make missing assets and loading failures clear
 The publisher generates `dist/webgl/index.html` from
 `rust_management/web/index.template.html` and the game's `game_page.json`.
 Do not maintain a project-root `index.html` for a migrated game. Configure the
-title, WASM name, controls, page copy, canvas behavior, and Project Roost slug
-in `game_page.json`; change the shared template only for catalog-wide behavior.
+title, WASM name, controls, page copy, and canvas behavior in `game_page.json`;
+the shared publisher derives the Project Roost slug as
+`rust_<project_directory>` and the project page does not override it. Change
+the shared template only for catalog-wide behavior.
 
 ### 8.5 Catalog Thumbnail
 Each published game should keep `catalog_thumbnail.png` in the project root. Use a 16:9 title-screen or main-menu capture. The shared publisher deploys the file as `<game_slug>/catalog_thumbnail.png`, and the WebHatchery games catalog uses that stable path for card thumbnails.

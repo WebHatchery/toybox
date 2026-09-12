@@ -1,5 +1,5 @@
-use super::*;
 use macroquad_toolkit::synth::render_waveform;
+use toybox_after_hours::audio::{ambience_voices, config, voices_for, AudioDirector, Cue};
 
 #[test]
 fn every_cue_renders_an_audible_non_clipping_wave() {
@@ -45,15 +45,15 @@ fn a_silent_director_fails_softly() {
     audio.play(Cue::Restored);
     audio.start_ambience();
     audio.set_volumes(1.0, 1.0);
-    assert!(!audio.enabled);
+    assert!(!audio.is_enabled());
 }
 
 #[test]
 fn zero_effects_volume_never_starts_a_cue_cooldown() {
     let mut audio = AudioDirector::silent();
-    audio.enabled = true;
-    audio.effects_volume = 0.0;
+    audio.set_enabled(true);
+    audio.set_volumes(0.0, 1.0);
     assert!(!audio.channel_allows(Cue::ShelfCorrect));
     audio.play(Cue::ShelfCorrect);
-    assert!(audio.cooldowns.is_empty());
+    assert_eq!(audio.cooldown_count(), 0);
 }

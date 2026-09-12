@@ -77,3 +77,9 @@ impl DebugOverlay {
         }
     }
 }
+
+impl Default for DebugOverlay {
+    fn default() -> Self {
+        Self::new()
+    }
+}

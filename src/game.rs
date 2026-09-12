@@ -26,15 +26,10 @@ use macroquad_toolkit::settings::GameSettings;
 use macroquad_toolkit::ui::format_mmss;
 
 mod actions;
+mod update;
 
 const TITLE_TEXTURE_PATH: &str = "assets/toybox_title.png";
 const ASSET_PACK_PATH: &str = "assets.zip";
-
-const MIN_FOV_DEGREES: f32 = 60.0;
-const MAX_FOV_DEGREES: f32 = 110.0;
-const FOV_STEP_DEGREES: f32 = 5.0;
-const SENSITIVITY_STEP: f32 = 0.1;
-const UI_SCALE_STEP: f32 = 0.1;
 
 pub struct Game {
     data: GameData,
@@ -51,7 +46,6 @@ pub struct Game {
     warned_five_minutes: bool,
     warned_one_minute: bool,
     settings_from_game: bool,
-    mouse_locked: bool,
     debug_overlay: DebugOverlay,
     bench: Option<BenchMode>,
     gallery: Option<GalleryScene>,
@@ -65,6 +59,8 @@ pub struct Game {
     /// Advances independently of simulation state so two fresh Relaxed Runs
     /// cannot receive the same seed even when started in one clock tick.
     relaxed_seed_nonce: u64,
+    touch_movement: Vec2,
+    touch_look: Vec2,
 }
 
 /// How long the perf probe should run, if it was asked for.
@@ -116,8 +112,6 @@ impl Game {
         let data = GameData::load().unwrap_or_else(|err| {
             panic!("Toybox embedded data failed to load: {}", err);
         });
-        let _loaded_assets = data.texture_manifest.len();
-
         let asset_pack = AssetPack::load(ASSET_PACK_PATH).await.ok();
         let title_texture = match load_texture_from_pack_or_file(
             asset_pack.as_ref(),
@@ -137,7 +131,7 @@ impl Game {
         let mut settings = GameSettings::load(&data.config.game_name);
         settings.sanitize();
         settings.apply_display();
-        let preferences = ToyboxPreferences::load(&data.config.game_name);
+        let preferences = ToyboxPreferences::load(&data.config.game_name, &data.config);
         let audio_disabled =
             macroquad_toolkit::capture::capture_requested("TOYBOX") || bench_seconds().is_some();
         let audio = if audio_disabled {
@@ -187,7 +181,6 @@ impl Game {
             warned_five_minutes: false,
             warned_one_minute: false,
             settings_from_game: false,
-            mouse_locked: false,
             debug_overlay: DebugOverlay::new(),
             bench,
             gallery: None,
@@ -195,6 +188,8 @@ impl Game {
             recorded_run: false,
             beat_record: false,
             relaxed_seed_nonce,
+            touch_movement: Vec2::ZERO,
+            touch_look: Vec2::ZERO,
         }
     }
 
@@ -342,7 +337,7 @@ impl Game {
             }
             "large_ui" => {
                 self.session = capture_scenes::mid_run(&self.data);
-                self.settings.ui_text_scale = 1.2;
+                self.settings.ui_text_scale = self.data.config.ui_scale_max;
                 self.screen = GameScreen::Playing;
             }
             "paused" => {
@@ -351,160 +346,6 @@ impl Game {
                 self.screen = GameScreen::Settings;
             }
             _ => {}
-        }
-    }
-
-    pub fn update(&mut self, dt: f32) {
-        if self.gallery.is_some() {
-            return;
-        }
-        self.notifications.update(dt);
-        self.audio.update(dt);
-        // Before any early return: the title, settings and tool-shop screens
-        // all draw the animated shop behind them.
-        ui::advance_animation_clock(dt);
-        self.debug_overlay.record_frame(dt);
-        if self.data.config.debug_overlay_enabled && is_key_pressed(KeyCode::F3) {
-            self.debug_overlay.toggle();
-        }
-        self.update_bench(dt);
-
-        if self.screen != GameScreen::Playing {
-            if self.screen == GameScreen::Settings && is_key_pressed(KeyCode::Escape) {
-                self.events.push(UiAction::CloseSettings);
-            } else if self.screen == GameScreen::Help && is_key_pressed(KeyCode::Escape) {
-                self.events.push(UiAction::CloseHelp);
-            } else if self.screen == GameScreen::ToolShop
-                && (is_key_pressed(KeyCode::Escape) || is_key_pressed(KeyCode::T))
-            {
-                self.events.push(UiAction::CloseToolShop);
-            }
-            self.apply_queued_actions();
-            return;
-        }
-
-        let remaining_before = self.session.shift_remaining(&self.data);
-        if self.session.update_timer(dt, &self.data) {
-            self.set_mouse_locked(false);
-            self.audio.play(Cue::ClosingWarning);
-            self.notifications
-                .warning("The doors are open - shift over");
-        }
-        let remaining_after = self.session.shift_remaining(&self.data);
-        if self.session.shift_mode.shows_countdown() {
-            if !self.warned_five_minutes && remaining_before > 300.0 && remaining_after <= 300.0 {
-                self.warned_five_minutes = true;
-                self.audio.play(Cue::ClosingWarning);
-                self.notifications.warning("Five minutes until opening");
-            }
-            if !self.warned_one_minute && remaining_before > 60.0 && remaining_after <= 60.0 {
-                self.warned_one_minute = true;
-                self.audio.play(Cue::ClosingWarning);
-                self.notifications.danger("One minute until opening");
-            }
-        }
-
-        let current_mouse_position: Vec2 = mouse_position().into();
-        if is_mouse_button_pressed(MouseButton::Left)
-            && ui::should_lock_mouse_from_screen_position(current_mouse_position)
-        {
-            self.set_mouse_locked(true);
-        }
-        if is_key_pressed(KeyCode::Tab) {
-            self.set_mouse_locked(!self.mouse_locked);
-        }
-
-        let mouse_delta = ui::continuous_mouse_delta_pixels();
-        let look_delta = ui::look_delta_from_input(
-            mouse_delta,
-            self.mouse_locked,
-            dt,
-            self.preferences.mouse_sensitivity,
-        );
-        self.session.update_player_look(look_delta.x, look_delta.y);
-
-        let movement = ui::movement_from_keys();
-        self.session.move_player(movement, &self.data, dt);
-        if movement.length_squared() > 0.0 {
-            self.audio.play_at(Cue::Footstep, 0.20);
-        }
-        self.tutorial.observe_navigation(
-            movement.length_squared() > 0.0,
-            look_delta.length_squared() > 0.0,
-        );
-
-        if self.tutorial.is_active() && is_key_pressed(KeyCode::H) {
-            self.tutorial.skip();
-            self.preferences.tutorial_complete = true;
-            self.save_preferences();
-            self.notifications
-                .info("First-shift guide hidden. Replay it from Settings");
-        }
-
-        if is_key_pressed(KeyCode::Escape) {
-            self.events.push(UiAction::Settings);
-        }
-        if is_key_pressed(KeyCode::R) {
-            self.events.push(match self.session.shift_mode {
-                ShiftMode::Timed => UiAction::NewGame,
-                ShiftMode::Relaxed => UiAction::NewRelaxedGame,
-            });
-        }
-        if is_key_pressed(KeyCode::F5) {
-            self.events.push(UiAction::ReplayShiftSeed);
-        }
-        if is_key_pressed(KeyCode::E) || is_key_pressed(KeyCode::Space) {
-            self.events.push(UiAction::Interact);
-        }
-        if is_key_pressed(KeyCode::Q) {
-            self.events.push(UiAction::CycleCarry);
-        }
-        if is_key_pressed(KeyCode::G) {
-            self.events.push(UiAction::DropActive);
-        }
-        if is_key_pressed(KeyCode::T) {
-            self.events.push(UiAction::OpenToolShop);
-        }
-        if is_key_pressed(KeyCode::S) && is_control_down() {
-            self.events.push(UiAction::Save);
-        }
-        if is_key_pressed(KeyCode::L) && is_control_down() {
-            self.events.push(UiAction::Load);
-        }
-
-        self.apply_queued_actions();
-        self.finish_tutorial_if_ready();
-        self.record_finished_run();
-    }
-
-    /// Submit the run to the records once it ends.
-    ///
-    /// One place rather than two: a shift can end by the clock in
-    /// `update_timer` or by the last toy landing in `place_active_toy`, and
-    /// hooking both invites one of them being forgotten later.
-    fn record_finished_run(&mut self) {
-        if self.recorded_run || !self.session.phase.is_over() {
-            return;
-        }
-        self.recorded_run = true;
-
-        let summary = self.session.shift_summary(&self.data);
-        let restored = self.session.phase == GamePhase::Finished;
-        let run = ShiftRecord::from_summary(&summary, restored);
-        self.beat_record = self.best_runs.submit(self.session.shift_mode, run);
-        if !self.beat_record {
-            return;
-        }
-
-        if let Err(err) = self.best_runs.save(
-            &self.data.config.game_name,
-            &self.data.config.records_slot,
-            &self.data.config.version,
-        ) {
-            // Worth saying out loud: the player just set a record and it did not
-            // stick, which they would otherwise discover only on the next run.
-            self.notifications
-                .danger(format!("Could not save your best run: {}", err));
         }
     }
 
@@ -545,7 +386,6 @@ impl Game {
                 let ctx = UiContext {
                     data: &self.data,
                     session: &self.session,
-                    mouse_locked: self.mouse_locked,
                     fov_degrees: self.preferences.fov_degrees,
                     best_run: self.best_runs.best_for(self.session.shift_mode),
                     beat_record: self.beat_record,
@@ -557,7 +397,6 @@ impl Game {
                 let ctx = UiContext {
                     data: &self.data,
                     session: &self.session,
-                    mouse_locked: self.mouse_locked,
                     fov_degrees: self.preferences.fov_degrees,
                     best_run: self.best_runs.best_for(self.session.shift_mode),
                     beat_record: self.beat_record,
@@ -577,55 +416,6 @@ impl Game {
                 anchor: NotificationAnchor::TopRight,
                 ..Default::default()
             });
-    }
-
-    fn update_bench(&mut self, dt: f32) {
-        let Some(bench) = &mut self.bench else {
-            return;
-        };
-        bench.frames += 1;
-        bench.elapsed_seconds += dt;
-
-        // `dt` arrives clamped to 0.1s so one long frame cannot teleport the
-        // simulation — which meant `worst_frame_ms` could never report worse
-        // than 100.00 and a two-second stall read the same as a hitch. The
-        // unclamped frame time is what the player actually waited.
-        let frame_seconds = get_frame_time();
-        if bench.frames > BENCH_WARMUP_FRAMES {
-            bench.measured_frames += 1;
-            bench.worst_frame_seconds = bench.worst_frame_seconds.max(frame_seconds);
-            if frame_seconds > BENCH_SLOW_FRAME_SECONDS {
-                bench.slow_frames += 1;
-            }
-        }
-
-        // Slow sweep so the run exercises culling across view directions.
-        self.session.update_player_look(0.55 * dt, 0.0);
-
-        if bench.elapsed_seconds >= bench.duration_seconds {
-            let average_fps = bench.frames as f32 / bench.elapsed_seconds.max(f32::EPSILON);
-            println!(
-                "BENCH toys={} frames={} seconds={:.2} avg_fps={:.1} \
-                 worst_frame_ms={:.2} slow_frames={}/{} (>{:.1}ms, after {} warm-up)",
-                self.session.toys.len(),
-                bench.frames,
-                bench.elapsed_seconds,
-                average_fps,
-                bench.worst_frame_seconds * 1000.0,
-                bench.slow_frames,
-                bench.measured_frames,
-                BENCH_SLOW_FRAME_SECONDS * 1000.0,
-                BENCH_WARMUP_FRAMES,
-            );
-            quit();
-        }
-    }
-
-    fn apply_queued_actions(&mut self) {
-        let actions: Vec<UiAction> = self.events.drain().collect();
-        for action in actions {
-            self.apply_action(action);
-        }
     }
 
     fn save_game(&mut self) {
@@ -680,12 +470,6 @@ impl Game {
                 false
             }
         }
-    }
-
-    fn set_mouse_locked(&mut self, locked: bool) {
-        self.mouse_locked = locked;
-        set_cursor_grab(locked);
-        show_mouse(!locked);
     }
 
     fn save_preferences(&mut self) {

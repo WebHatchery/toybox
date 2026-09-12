@@ -19,7 +19,7 @@ fn pickup_uses_crosshair_target_instead_of_closest_toy() {
 
     session.toys[0].position = WorldPoint { x: 5.45, y: 5.68 };
     session.toys[1].position = WorldPoint { x: 6.30, y: 5.00 };
-    session.spatial.rebuild(&session.toys);
+    session.rebuild_spatial_index();
 
     let result = session.interact(&data);
 
@@ -113,7 +113,7 @@ fn stand_in_the_open_looking_at(session: &mut GameSession, toy_index: usize) {
     }
     session.toys[toy_index].position = WorldPoint { x: 9.55, y: 10.8 };
     session.toys[toy_index].is_held = false;
-    session.spatial.rebuild(&session.toys);
+    session.rebuild_spatial_index();
 }
 
 /// Standing at a stocked shelf, looking down at a toy on the floor, `E` must
@@ -160,7 +160,7 @@ fn looking_down_at_the_floor_beside_a_shelf_does_not_unshelve_anything() {
         x: slot.x + 0.55,
         y: slot.y,
     };
-    session.spatial.rebuild(&session.toys);
+    session.rebuild_spatial_index();
 
     // Aimed at the floor toy, the way the replay's closer aims.
     session.player.pitch = -1.0;
@@ -229,7 +229,7 @@ fn looking_at_a_stocked_slot_still_takes_the_toy_off_the_shelf() {
         x: slot.x + 0.55,
         y: slot.y,
     };
-    session.spatial.rebuild(&session.toys);
+    session.rebuild_spatial_index();
 
     session.interact(&data);
 
@@ -303,20 +303,20 @@ fn spatial_grid_tracks_pickup_place_and_drop() {
         .unwrap();
     let spawn = session.toys[toy_index].position.to_vec2();
     assert!(session
-        .spatial
+        .spatial()
         .indices_near(spawn, 0.1)
         .contains(&toy_index));
 
     session.pick_up_toy(toy_index, &data);
     assert!(!session
-        .spatial
+        .spatial()
         .indices_near(spawn, 0.1)
         .contains(&toy_index));
 
     let _ = session.place_active_toy(0, 0, &data);
     let placed = session.toys[toy_index].position.to_vec2();
     assert!(session
-        .spatial
+        .spatial()
         .indices_near(placed, 0.1)
         .contains(&toy_index));
 
@@ -324,7 +324,7 @@ fn spatial_grid_tracks_pickup_place_and_drop() {
     session.drop_active(&data).unwrap();
     let dropped = session.toys[toy_index].position.to_vec2();
     assert!(session
-        .spatial
+        .spatial()
         .indices_near(dropped, 0.1)
         .contains(&toy_index));
 }

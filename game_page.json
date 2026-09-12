@@ -15,44 +15,48 @@
       "desc": "Move through the shop in first person"
     },
     {
-      "key": "Mouse / Arrows",
+      "key": "Drag View / Arrows",
       "desc": "Look around, including up and down"
     },
     {
-      "key": "Click View",
-      "desc": "Lock mouse look; Tab or Esc releases it"
+      "key": "W A S D buttons",
+      "desc": "Walk in four directions"
     },
     {
-      "key": "E / Space",
+      "key": "ACT button",
       "desc": "Pick up, load another toy onto the trolley, shelf, place on the bench, or place on the floor"
     },
     {
-      "key": "Q",
+      "key": "CARRY button",
       "desc": "Cycle which carried toy is active"
     },
     {
-      "key": "G",
+      "key": "DROP button",
       "desc": "Quick-drop the active toy"
     },
     {
-      "key": "T",
+      "key": "TOOLS button",
       "desc": "Open or close the shop tools screen"
     },
     {
-      "key": "H",
+      "key": "SKIP GUIDE button / H",
       "desc": "Hide the first-shift guide; replay it from Settings"
     },
     {
-      "key": "Esc",
+      "key": "PAUSE button",
       "desc": "Pause, adjust settings, or open How to Play"
     },
     {
-      "key": "Ctrl+S / Ctrl+L",
-      "desc": "Save / load cleanup progress"
+      "key": "Save & Quit / Continue buttons",
+      "desc": "Save or resume cleanup progress (Ctrl+S / Ctrl+L also work)"
     },
     {
-      "key": "R / F5",
-      "desc": "Start a fresh shift / replay this exact layout"
+      "key": "NEW SHIFT / REPLAY LAYOUT buttons",
+      "desc": "Start a fresh shift or replay this exact layout (R / F5 also work)"
+    },
+    {
+      "key": "Tap controls",
+      "desc": "All required movement, sorting, recovery, menu, and pause actions are visible on screen"
     }
   ],
   "details": [
@@ -70,22 +74,8 @@
     }
   ],
   "repository": "https://github.com/WebHatchery/toybox",
-  "pointer_lock": {
-    "logical_width": 1280,
-    "logical_height": 720,
-    "blocked_regions": [
-      {
-        "x": 18,
-        "y": 16,
-        "w": 594,
-        "h": 104
-      },
-      {
-        "x": 18,
-        "y": 600,
-        "w": 360,
-        "h": 102
-      }
-    ]
+  "input": {
+    "touch_first": true,
+    "pointer_lock_required": false
   }
 }

@@ -181,7 +181,7 @@ impl GameSession {
     /// A part left waiting on the nearest bench whose counterpart is still out
     /// in the store, as `(repaired name, missing part)`. `None` once the bench
     /// is empty or every slot is filled.
-    pub(super) fn lone_benched_part(&self, data: &GameData) -> Option<(String, RepairPartKind)> {
+    pub fn lone_benched_part(&self, data: &GameData) -> Option<(String, RepairPartKind)> {
         let bench = self.nearest_bench(data)?;
         let part_indices = self.benched_repair_part_indices(bench);
         if part_indices.len() != 1 {

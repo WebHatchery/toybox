@@ -1,6 +1,6 @@
 use super::*;
-use crate::toys::{toy_color, toy_profile};
 use std::collections::HashSet;
+use toybox_after_hours::toys::{toy_color, toy_profile};
 
 #[test]
 fn new_session_generates_requested_toys() {

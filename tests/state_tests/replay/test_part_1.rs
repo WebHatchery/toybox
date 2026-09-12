@@ -56,7 +56,7 @@ fn render_settings_cannot_move_the_score() {
         .position(|toy| !toy.is_held && toy.placed_display_id.is_none())
         .unwrap();
     let toy_position = session.toys[toy].position.to_vec2();
-    session.player.position = WorldPoint::from_vec2_for_replay(toy_position - vec2(0.5, 0.0));
+    session.player.position = WorldPoint::from_vec2(toy_position - vec2(0.5, 0.0));
     session.player.yaw = 0.0;
     session.player.pitch = -0.42;
     assert!(

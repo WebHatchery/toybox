@@ -374,7 +374,9 @@ Do not hand-maintain a game-root `index.html`. The publisher combines the
 canonical `rust_management/web/index.template.html` shell with a small
 project-root `game_page.json` and writes `dist/webgl/index.html`.
 
-Only `title` is required; the publisher derives defaults for omitted values:
+Only `title` is required; the publisher derives defaults for omitted values.
+Project Roost uses the canonical `rust_<project_directory>` slug; do not add a
+per-project slug field to `game_page.json`:
 
 ```json
 {
