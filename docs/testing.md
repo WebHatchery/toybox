@@ -1,26 +1,29 @@
-# Test coverage review
+# Feature coverage review
 
-The five-case target is the default for a major feature. The current suites
-are deliberately split by responsibility:
+Follow `CODE_STANDARDS.md` §11. Tests and test-only helpers belong in this
+crate's `tests/` directory and exercise the public library API. Keep `src/`
+free of test declarations, test source files, and test-only helpers.
 
-- `tests/data.rs`: six checks for embedded data, tool reachability, touch-first
-  copy, preference ranges, layout references, and touch-first game-page
-  recovery controls.
-- `tests/audio.rs`: five checks for waveform generation, cue duration, ambience,
-  mute behavior, and rate limiting.
-- `tests/state_tests/`: 93 normal gameplay checks plus two intentionally
-  ignored replay diagnostics. The state suites cover movement, targeting,
-  placement, repairs, upgrades, persistence migration, records, clocks, zone
-  progress, and deterministic replays.
-- `tests/preferences.rs`, `tests/tutorial.rs`, `tests/part_accents.rs`, and
-  `tests/scene3d.rs`: narrow adapter, progression, identity-accent, and render
-  math checks. They are smaller than five because each covers one compact seam;
-  the broader gameplay behavior is covered by the state and replay suites.
+Strongly target no more than five `#[test]` cases for each major feature,
+counted across suite names and files. Use simple fixtures and rule-like tests,
+consolidating related inputs without deleting useful regression coverage.
+Before committing, review affected features and explain specific independent
+contracts that warrant any additional cases.
 
-The six on-disk persistence checks remain normal tests rather than being
-silently skipped. The read-only missing-file check passes here, while the five
-write cases report `Access is denied` because this managed workspace denies the
-test process write access to the Windows `dirs::data_local_dir()` root. Run the
-same suite on an unrestricted Windows checkout to exercise those five cases.
-The two ignored replay reports are diagnostic balance sweeps and are run
-explicitly when retuning `toy_count` or the full-shift route.
+The state integration entry point spans several responsibilities: movement
+and pickup, placement, repair, upgrades, shift timing, records, save migration,
+and complete-shift replay. Review those responsibilities, not the aggregate
+entry point or each child filename, against the feature target. A repair rule
+still belongs to repair when it is exercised from another suite.
+
+Content validation, audio behavior, and persistence adapters have different
+failure boundaries; preserve their meaningful contracts while consolidating
+related inputs. Existing render-math or presentation checks do not establish a
+requirement for general UI/rendering unit coverage. Use captures and manual
+browser checks for presentation and touch behavior.
+
+The ignored replay reports are explicit balance diagnostics. Run them when
+retuning the shop size or full-shift route; normal regression cases should
+assert gameplay outcomes. Report current execution results with the change
+rather than treating an earlier machine's permissions or test counts as a
+standing property of the project.
